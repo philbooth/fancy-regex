@@ -105,6 +105,8 @@ const MAX_RECURSION: usize = 64;
 
 pub type Result<T> = ::std::result::Result<T, Error>;
 
+static DEFAULT_SIZE_LIMIT: usize = 10 * (1<<20);
+
 // We use one Error type for both compile time and run time errors,
 // to minimize the boilerplate for callers.
 #[derive(Debug)]
@@ -142,6 +144,18 @@ pub enum Regex {
         n_groups: usize,
         original: String,
     },
+}
+
+/// Regular expression builder.
+#[derive(Debug)]
+pub struct RegexBuilder {
+    pattern: String,
+    case_insensitive: bool,
+    multi_line: bool,
+    dot_matches_new_line: bool,
+    unicode: bool,
+    has_flags: bool,
+    size_limit: usize,
 }
 
 /// A single match of a regex in an input text
@@ -184,6 +198,11 @@ impl fmt::Debug for Regex {
 
 impl Regex {
     pub fn new(re: &str) -> Result<Regex> {
+        Regex::new_with_size_limit(re, DEFAULT_SIZE_LIMIT)
+    }
+
+    // TODO: pass size_limit to wrapped regexes
+    fn new_with_size_limit(re: &str, size_limit: usize) -> Result<Regex> {
         let (raw_e, backrefs) = Expr::parse(re)?;
 
         // wrapper to search for re at arbitrary start position,
@@ -215,11 +234,11 @@ impl Regex {
                 _ => unreachable!(),
             };
             raw_e.to_str(&mut re_cooked, 0);
-            let inner = compile::compile_inner(&re_cooked)?;
+            let inner = compile::compile_inner_with_size_limit(&re_cooked, size_limit)?;
             let inner1 = if inner_info.looks_left {
                 // create regex to handle 1-char look-behind
                 let re1 = ["^(?s:.)+?(", re_cooked.as_str(), ")"].concat();
-                let compiled = compile::compile_inner(&re1)?;
+                let compiled = compile::compile_inner_with_size_limit(&re1, size_limit)?;
                 Some(Box::new(compiled))
             } else {
                 None
@@ -418,6 +437,73 @@ impl Regex {
         match *self {
             Regex::Wrap { ref inner, .. } => println!("wrapped {:?}", inner),
             Regex::Impl { ref prog, .. } => prog.debug_print(),
+        }
+    }
+}
+
+impl RegexBuilder {
+    pub fn new(pattern: impl Into<String>) -> Self {
+        Self {
+            pattern: pattern.into(),
+            case_insensitive: false,
+            multi_line: false,
+            dot_matches_new_line: false,
+            unicode: false,
+            has_flags: false,
+            size_limit: DEFAULT_SIZE_LIMIT,
+        }
+    }
+
+    pub fn case_insensitive(&mut self, value: bool) -> &mut Self {
+        self.case_insensitive = value;
+        if value {
+            self.has_flags = true;
+        }
+        self
+    }
+
+    pub fn multi_line(&mut self, value: bool) -> &mut Self {
+        self.multi_line = value;
+        if value {
+            self.has_flags = true;
+        }
+        self
+    }
+
+    pub fn dot_matches_new_line(&mut self, value: bool) -> &mut Self {
+        self.dot_matches_new_line = value;
+        if value {
+            self.has_flags = true;
+        }
+        self
+    }
+
+    pub fn unicode(&mut self, value: bool) -> &mut Self {
+        self.unicode = value;
+        if value {
+            self.has_flags = true;
+        }
+        self
+    }
+
+    pub fn size_limit(&mut self, value: usize) -> &mut Self {
+        self.size_limit = value;
+        self
+    }
+
+    pub fn build(&self) -> Result<Regex> {
+        if self.has_flags {
+            let flags = format!(
+                "{}{}{}{}",
+                if self.case_insensitive { "i" } else { "" },
+                if self.multi_line { "m" } else { "" },
+                if self.dot_matches_new_line { "s" } else { "" },
+                if self.unicode { "u" } else { "" },
+            );
+            let pattern = format!("(?{}){}", &flags, &self.pattern);
+            Regex::new_with_size_limit(&pattern, self.size_limit)
+        } else {
+            Regex::new_with_size_limit(&self.pattern, self.size_limit)
         }
     }
 }

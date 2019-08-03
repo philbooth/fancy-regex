@@ -475,6 +475,13 @@ pub fn compile_inner(inner_re: &str) -> Result<regex::Regex> {
     regex::Regex::new(inner_re).map_err(Error::InnerError)
 }
 
+pub fn compile_inner_with_size_limit(inner_re: &str, size_limit: usize) -> Result<regex::Regex> {
+    regex::RegexBuilder::new(inner_re)
+        .size_limit(size_limit)
+        .build()
+        .map_err(Error::InnerError)
+}
+
 // Don't need the expr because the analysis info points to it
 pub fn compile(info: &Info) -> Result<Prog> {
     let mut c = Compiler {
