@@ -132,6 +132,52 @@ pub enum Error {
     StackOverflow,
 }
 
+impl fmt::Display for Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Error::ParseError => write!(formatter, "failed to parse regular expression"),
+            Error::UnclosedOpenParen => write!(formatter, "unmatched `(` in regular expression"),
+            Error::InvalidRepeat => {
+                write!(formatter, "invalid repeat syntax in regular expression")
+            }
+            Error::RecursionExceeded => {
+                write!(formatter, "recursion limit exceeded in regular expression")
+            }
+            Error::LookBehindNotConst => {
+                write!(formatter, "invalid look-behind in regular expression")
+            }
+            Error::TrailingBackslash => {
+                write!(formatter, "trailing backslash in regular expression")
+            }
+            Error::InvalidEscape => {
+                write!(formatter, "invalid escape sequence in regular expression")
+            }
+            Error::UnclosedUnicodeName => {
+                write!(formatter, "unclosed unicode name in regular expression")
+            }
+            Error::InvalidHex => write!(formatter, "invalid hex code in regular expression"),
+            Error::InvalidCodepointValue => {
+                write!(formatter, "invalid codepoint in regular expression")
+            }
+            Error::InvalidClass => {
+                write!(formatter, "invalid character class in regular expression")
+            }
+            Error::UnknownFlag => write!(formatter, "invalid flag in regular expression"),
+            Error::NonUnicodeUnsupported => write!(
+                formatter,
+                "non-unicode regular expressions are not supported"
+            ),
+            Error::InvalidBackref => {
+                write!(formatter, "invalid back-reference in regular expression")
+            }
+            Error::InnerError(ref inner) => inner.fmt(formatter),
+            Error::StackOverflow => {
+                write!(formatter, "stack overflow executing regular expression")
+            }
+        }
+    }
+}
+
 pub enum Regex {
     // Do we want to box this? It's pretty big...
     Wrap {
