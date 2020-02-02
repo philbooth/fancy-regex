@@ -4,7 +4,7 @@ use std::fmt;
 pub type Result<T> = ::std::result::Result<T, Error>;
 
 /// An error for the result of compiling or running a regex.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
     // Compile time errors
     /// General parsing error
