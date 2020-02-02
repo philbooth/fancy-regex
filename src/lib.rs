@@ -214,6 +214,10 @@ struct RegexOptions {
     backtrack_limit: usize,
     delegate_size_limit: Option<usize>,
     delegate_dfa_size_limit: Option<usize>,
+    case_insensitive: bool,
+    multi_line: bool,
+    dot_matches_new_line: bool,
+    unicode: bool,
 }
 
 impl Default for RegexOptions {
@@ -223,6 +227,10 @@ impl Default for RegexOptions {
             backtrack_limit: 1_000_000,
             delegate_size_limit: None,
             delegate_dfa_size_limit: None,
+            case_insensitive: false,
+            multi_line: false,
+            dot_matches_new_line: false,
+            unicode: false,
         }
     }
 }
@@ -233,7 +241,18 @@ impl RegexBuilder {
     /// If the pattern is invalid, the call to `build` will fail later.
     pub fn new(pattern: &str) -> Self {
         let mut builder = RegexBuilder(RegexOptions::default());
-        builder.0.pattern = pattern.to_string();
+        if builder.0.case_insensitive || builder.0.multi_line || builder.0.dot_matches_new_line || builder.0.unicode {
+            let flags = format!(
+                "{}{}{}{}",
+                if builder.0.case_insensitive { "i" } else { "" },
+                if builder.0.multi_line { "m" } else { "" },
+                if builder.0.dot_matches_new_line { "s" } else { "" },
+                if builder.0.unicode { "u" } else { "" },
+            );
+            builder.0.pattern = format!("(?{}){}", &flags, pattern);
+        } else {
+            builder.0.pattern = pattern.to_string();
+        }
         builder
     }
 
