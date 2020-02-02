@@ -1,12 +1,12 @@
 [package]
-name = "fancy-regex"
+name = "fancy-regex-fork-pb"
 version = "0.3.1" # remember to update html_root_url
-authors = ["Raph Levien <raph@google.com>", "Robin Stocker <robin@nibor.org>"]
+authors = ["Phil Booth <pmbooth@gmail.com>"]
 edition = "2018"
 license = "MIT"
-description = "An implementation of regexes, supporting a relatively rich set of features, including backreferences and look-around."
+description = "A custom fork of the fancy-regex crate. You probably don't want to use this."
 readme = "README.md"
-repository = "https://github.com/fancy-regex/fancy-regex"
+repository = "https://github.com/philbooth/fancy-regex"
 documentation = "https://docs.rs/fancy-regex"
 categories = ["text-processing"]
 
